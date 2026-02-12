@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>AI Chatbot</title>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<style>
+
+  html, body{
+  height:100%;
+  margin:0;
+}
+
+:root{
+  --bg:#ffffff;--bg-light:#f6f4fb;--text:#2b2240;
+  --bot:#f1ecfb;--user:#d9ccf5;--border:#b79ced;
+  --accent:#9f86e3;
+}
+
+body.dark{
+  --bg:#1e1830;        
+  --bg-light:#342b58; 
+ 
+  --text:#f5f1ff;
+
+  --bot:#2f2750;
+  --user:#7a64cf;
+
+  --border:#6f5cc3;
+  --accent:#9f86e3;    
+}
+  body.dark .chat-area {
+  background: var(--bg-light);
+}
+
+body{
+  margin:0;
+  height:100vh;
+  display:flex;
+  font-family:system-ui;
+  background:var(--bg);
+  color:var(--text);
+}
+
+/* SIDEBAR */
+.sidebar{
+  width:260px;
+  background:linear-gradient(180deg, var(--bg-light), var(--bg));
+  color:var(--text);
+  display:flex;
+  flex-direction:column;
+}
+
+.sidebar.hidden{display:none}
+.sidebar h2{margin:16px}
+.new-chat{
+  margin:0 16px 12px;padding:10px;border:none;border-radius:8px;
+  background:white;font-weight:600;cursor:pointer;
+}
+.chat-history{flex:1;overflow-y:auto}
+.chat-item{
+  padding:10px 16px;
+  cursor:pointer;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.chat-item.active{background:rgba(255,255,255,.25)}
+.chat-title{
+  flex:1;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.header{
+  display:flex;
+  align-items:center;
+}
+
+.header-right{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.menu-btn{
+  background:none;border:none;color:white;
+  font-size:18px;cursor:pointer;
+}
+.menu{
+  position:absolute;
+  background:white;
+  color:#333;
+  right:16px;
+  border-radius:6px;
+  box-shadow:0 4px 10px rgba(0,0,0,.2);
+  z-index:100;
+}
+.menu div{
+  padding:8px 12px;
+  cursor:pointer;
+}
+.menu div:hover{background:#eee}
+
+/* MAIN */
+.app{
+  min-height:100vh;
+  width:100%;
+
+  display:flex;
+  flex-direction:column;
+
+  background:var(--bg);
+}
+
+.header{
+  padding:14px 18px;
+  background:linear-gradient(90deg, var(--bg-light), var(--bg));
+  color:var(--text);
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.header span{font-weight:600}
+.header select,.toggle{
+  border:none;border-radius:8px;padding:6px 12px;font-weight:600;
+}
+
+.chat{
+  flex:1;
+  padding:20px;
+  overflow-y:auto;
+  background:var(--bg-light);
+}
+
+.msg{
+  max-width:75%;
+  padding:12px 14px;
+  margin-bottom:14px;
+  border-radius:12px;
+}
+.user{background:var(--user);margin-left:auto}
+.bot{
+  background:var(--bot);
+  box-shadow:0 8px 20px rgba(0,0,0,.25);
+}
+
+
+.role-badge{
+  font-size:11px;padding:2px 8px;border-radius:10px;
+  display:inline-block;margin-bottom:6px;font-weight:600;
+}
+.provider-badge{font-size:10px;opacity:.7;margin-left:6px}
+
+/* INPUT */
+.input-area{
+  padding:12px;
+  border-top:1px solid var(--border);
+  display:flex;
+  gap:10px;
+  background:var(--bg-light);
+}
+
+.input-area{
+  padding:12px;
+  border-top:1px solid var(--border);
+  display:flex;
+  gap:10px;
+  background:var(--bg-light);
+}
+
+textarea{
+  flex:1;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:var(--bg);
+  color:var(--text);
+}
+
+textarea::placeholder{
+  color:rgba(0,0,0,.35);
+}
+
+body.dark textarea::placeholder{
+  color:rgba(255,255,255,.55);
+}
+
+button.send{
+  border:none;border-radius:10px;padding:0 22px;
+  background:var(--accent);color:white;font-weight:600;cursor:pointer;
+}
+
+select, select option{
+  background:var(--bg);
+  color:var(--text);
+  border:1px solid var(--border);
+}
+
+body:not(.dark) .sidebar{
+  background:linear-gradient(180deg,#b79ced,#a17eee);
+  color:white;
+}
+
+body:not(.dark) .header{
+  background:linear-gradient(90deg,#a17eee,#b79ced);
+  color:white;
+}
+
+.msg.bot{
+  display:flex;
+  flex-direction:column;
+}
+
+.bot-confidence{
+  margin-top:10px;
+  padding-top:8px;
+  border-top:1px solid rgba(0,0,0,0.08);
+  width:100%;
+}
+
+.bar-track{
+  height:6px;
+  width:65%;
+  background:rgba(0,0,0,0.15);
+  border-radius:6px;
+  overflow:hidden;
+}
+
+.bar-fill{
+  height:100%;
+  border-radius:6px;
+  transition:width 0.4s ease;
+}
+
+.bar-text{
+  font-size:11px;
+  margin-top:4px;
+  opacity:0.65;
+  font-weight:600;
+}
+
+.feedback{
+  font-size:12px;
+  margin:-4px 0 12px 12px;
+  opacity:0.8;
+}
+
+body.dark .new-chat,
+body.dark .menu,
+body.dark .menu div:hover {
+  background: var(--bg-light);
+  color: var(--text);
+}
+body.dark .chat-item.active{
+  background: rgba(255,255,255,.08);
+}
+body.dark .sidebar{
+  background: linear-gradient(
+    180deg,
+    #2f2750,
+    #201a33
+  );
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="sidebar" id="sidebar">
+  <h2>Chats</h2>
+  <button class="new-chat" onclick="newChat()">+ New Chat</button>
+  <div class="chat-history" id="history"></div>
+</div>
+
+<div class="app">
+  <div class="header">
+    
+    <div class="header-left">
+      <button class="toggle" onclick="toggleSidebar()">☰</button>
+      <span>AI Chatbot</span>
+
+      <select id="provider">
+        <option value="groq">Groq</option>
+        <option value="openai">OpenAI</option>
+      </select>
+    </div>
+
+    <div class="header-right">
+      <select id="role">
+        <option value="general">General</option>
+        <option value="sap">SAP</option>
+        <option value="mentor">Mentor</option>
+        <option value="coding">Coding</option>
+      </select>
+
+      <button class="toggle" onclick="toggleDark()">🌙</button>
+      <div id="analytics" style="font-size:12px; opacity:.9;">
+  📊 <span id="msgCount">0</span> msgs |
+  💬 <span id="chatCount">0</span> chats
+</div>
+
+    </div>
+
+  </div>
+
+  <div class="chat" id="chat"></div>
+
+<div id="loader" style="display:none;opacity:.7;margin:10px;">
+  ⏳ AI is generating response...
+</div>
+
+  <div id="suggestions" style="
+  padding:8px 14px;
+  font-size:13px;
+  background:var(--bg-light);
+  border-top:1px solid var(--border);
+">
+  🧠 Try asking:
+</div>
+
+  <div class="input-area">
+    <textarea id="input" placeholder="Send a message…"></textarea>
+    <button class="send" onclick="send()">Send</button>
+  </div>
+</div>
+
+<script>
+const sidebar=document.getElementById("sidebar");
+const history=document.getElementById("history");
+const chat=document.getElementById("chat");
+const input=document.getElementById("input");
+const role=document.getElementById("role");
+const provider=document.getElementById("provider");
+const msgCount = document.getElementById("msgCount");
+const chatCount = document.getElementById("chatCount");
+const loader = document.getElementById("loader");
+
+/* STATE */
+let chats=JSON.parse(localStorage.getItem("chats")||"[]");
+let currentChat=null;
+
+function save(){localStorage.setItem("chats",JSON.stringify(chats));}
+function toggleSidebar(){sidebar.classList.toggle("hidden");}
+function toggleDark(){document.body.classList.toggle("dark");}
+
+function newChat(){
+  currentChat={id:Date.now(),title:"New Chat",messages:[]};
+  chats.unshift(currentChat);
+  save();renderHistory();
+  chat.innerHTML="";
+  fetch("/chat-start",{ method:"POST" });
+}
+
+function deleteChat(id){
+  chats=chats.filter(c=>c.id!==id);
+  save();renderHistory();
+  chat.innerHTML="";
+  currentChat=null;
+}
+
+function startInlineRename(c, titleEl){
+  const inputEl=document.createElement("input");
+  inputEl.value=c.title;
+  inputEl.style.width="100%";
+  inputEl.style.border="none";
+  inputEl.style.borderRadius="4px";
+  inputEl.style.padding="4px";
+
+  titleEl.replaceWith(inputEl);
+  inputEl.focus();
+  inputEl.select();
+
+  const finish=()=>{
+    const val=inputEl.value.trim()||"New Chat";
+    c.title=val;
+    save();
+    renderHistory();
+  };
+
+  inputEl.onblur=finish;
+  inputEl.onkeydown=e=>{
+    if(e.key==="Enter") finish();
+    if(e.key==="Escape") renderHistory();
+  };
+}
+
+function loadAnalytics(){
+  fetch("/analytics")
+    .then(res => res.json())
+    .then(data => {
+      msgCount.textContent = data.total_messages;
+      chatCount.textContent = data.total_chats;
+    });
+}
+
+function sendFeedback(value){
+  fetch("/feedback",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ value })
+  });
+}
+
+function renderSuggestions(){
+  const box = document.getElementById("suggestions");
+  if(!box) return;
+
+  const text = input.value.trim().toLowerCase();
+  const currentRole = role.value;
+
+  let suggestions = [];
+
+  // If user typed nothing
+  if(text.length === 0){
+    suggestions = [
+      "Explain this concept",
+      "Give a simple example",
+      "Explain in simple terms",
+      "Real-world use cases"
+    ];
+  }
+
+  else{
+    suggestions = [
+      `Explain "${text}"`,
+      `Give examples of "${text}"`,
+      `Why is "${text}" important?`,
+      `Explain "${text}" step by step`
+    ];
+
+    // role-based 
+    if(currentRole === "coding"){
+      suggestions.push(`Show code example for "${text}"`);
+    }
+    if(currentRole === "sap"){
+      suggestions.push(`How is "${text}" used in SAP?`);
+    }
+    if(currentRole === "mentor"){
+      suggestions.push(`How should I learn "${text}"?`);
+    }
+  }
+
+  box.innerHTML = "🧠 Try asking: " + suggestions
+    .slice(0,4)
+    .map(s =>
+      `<span
+        data-text="${s}"
+        onclick="useSuggestion(this.dataset.text)"
+        style="cursor:pointer;color:var(--accent);margin-left:6px;">
+        ${s}
+      </span>`
+    ).join(" | ");
+}
+
+function useSuggestion(text){
+  input.value = text;
+  input.focus();
+}
+
+function renderHistory(){
+  history.innerHTML="";
+  chats.forEach(c=>{
+    const row=document.createElement("div");
+    row.className="chat-item"+(currentChat&&c.id===currentChat.id?" active":"");
+    row.style.position="relative";
+
+    const title=document.createElement("div");
+    title.className="chat-title";
+    title.innerText=c.title;
+    title.onclick=()=>loadChat(c);
+
+    const btn=document.createElement("button");
+    btn.className="menu-btn";
+    btn.innerText="⋮";
+    btn.onclick=e=>{
+      e.stopPropagation();
+      document.querySelectorAll(".menu").forEach(m=>m.remove());
+
+      const menu=document.createElement("div");
+      menu.className="menu";
+
+      const r=document.createElement("div");
+      r.innerText="✏️ Rename";
+      r.onclick=()=>{menu.remove();startInlineRename(c,title);};
+
+      const d=document.createElement("div");
+      d.innerText="🗑️ Delete";
+      d.onclick=()=>{deleteChat(c.id);menu.remove();};
+
+      menu.append(r,d);
+      row.appendChild(menu);
+    };
+
+    row.append(title,btn);
+    history.appendChild(row);
+  });
+}
+
+function loadChat(c){
+  currentChat = c;
+  chat.innerHTML = "";
+
+  c.messages.forEach(m => {
+    if(m.type === "bot"){
+      chat.innerHTML += `
+        <div class="msg bot">
+          <div style="
+            font-size:11px;
+            opacity:0.7;
+            margin-bottom:6px;
+            font-weight:600;
+          ">
+            ${(m.role || "general").toUpperCase()} • ${(m.provider || "groq").toUpperCase()}
+          </div>
+
+          ${marked.parse(m.text)}
+
+          ${
+  m.confidence !== undefined
+  ? `
+    <div style="
+      margin-top:10px;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      font-size:11px;
+      opacity:0.6;
+    ">
+      <span>Confidence</span>
+
+      <div style="
+        height:4px;
+        width:160px;
+        background:rgba(0,0,0,0.15);
+        border-radius:4px;
+        overflow:hidden;
+      ">
+        <div style="
+          height:100%;
+          width:${m.confidence}%;
+          background:${getConfidenceColor(m.confidence)};
+        "></div>
+      </div>
+
+      <span>${m.confidence}%</span>
+    </div>
+  `
+  : ""
+}
+        </div>
+
+        <div style="
+          font-size:12px;
+          margin:-8px 0 16px 12px;
+          opacity:0.8;
+        ">
+          Was this helpful?
+          <span style="cursor:pointer;margin-left:6px" onclick="sendFeedback('up')">👍</span>
+          <span style="cursor:pointer;margin-left:6px" onclick="sendFeedback('down')">👎</span>
+        </div>
+      `;
+    } else {
+      chat.innerHTML += `<div class="msg user">${m.text}</div>`;
+    }
+  });
+
+  renderHistory();
+}
+
+function getConfidenceColor(score){
+  if(score >= 75) return "#2ecc71";   
+  if(score >= 50) return "#f1c40f";   
+  return "#e74c3c";                   
+}
+
+/* SEND */
+function send(){
+  if(!currentChat)newChat();
+  const text=input.value.trim();
+  if(!text)return;
+  input.value="";
+
+  if(currentChat.title==="New Chat"){
+    currentChat.title=text.slice(0,30);
+    save();renderHistory();
+  }
+
+  currentChat.messages.push({type:"user",text});
+  chat.innerHTML += `<div class="msg user">${text}</div>`;
+  chat.scrollTop = chat.scrollHeight;
+  loader.style.display = "block";
+
+  fetch("/chat",{
+  method:"POST",
+  headers:{ "Content-Type":"application/json" },
+  body: JSON.stringify({
+    message: text,
+    role: role.value,
+    provider: provider.value
+  })
+})
+.then(res => res.json())
+.then(data => {
+  const botText = data.reply || "No response";
+  const confidence = data.confidence;
+  const roleLabel = data.role.toUpperCase();
+  const providerLabel = data.provider.toUpperCase();
+  loader.style.display = "none";
+
+   currentChat.messages.push({
+  type: "bot",
+  text: botText,
+  role: role.value,
+  provider: provider.value,
+  confidence: confidence
+
+});
+
+  chat.innerHTML += `
+  <div class="msg bot">
+    ${marked.parse(botText)}
+  </div>
+`;
+  
+  chat.scrollTop = chat.scrollHeight;
+  
+  save();
+  loadChat(currentChat);
+  loadAnalytics();
+})
+.catch(err=>{
+  loader.style.display = "none";
+  chat.innerHTML += `<div class="msg bot">⚠️ Error getting response</div>`;
+});
+}
+
+document.getElementById("input").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    send();
+  }
+});
+
+document.addEventListener("click",()=>{
+  document.querySelectorAll(".menu").forEach(m=>m.remove());
+});
+
+renderHistory();
+if(chats.length)loadChat(chats[0]);
+loadAnalytics();
+
+role.addEventListener("change", renderSuggestions);
+input.addEventListener("input", renderSuggestions);
+renderSuggestions();
+
+</script>
+
+</body>
+</html>
