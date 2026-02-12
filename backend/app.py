@@ -20,7 +20,7 @@ analytics = {
     "feedback_up": 0,
     "feedback_down": 0
 }
-
+#API call
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
