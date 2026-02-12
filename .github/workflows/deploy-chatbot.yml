@@ -1,0 +1,30 @@
+name: Deploy AI Chatbot to SAP BTP
+
+on:
+  push:
+    branches:
+      - ai--chatbot
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install CF CLI
+        run: |
+          curl -L https://packages.cloudfoundry.org/stable?release=linux64-binary -o cf.tgz
+          tar -xzf cf.tgz
+          sudo mv cf /usr/local/bin
+
+      - name: Login to SAP BTP
+        run: |
+          cf api https://api.cf.ap21.hana.ondemand.com
+          cf auth ${{ secrets.CF_CLIENT_ID }} ${{ secrets.CF_CLIENT_SECRET }} --client-credentials
+          cf target -o f19465b6trial -s dev
+
+      - name: Deploy AI Chatbot
+        run: |
+          cf push ai-chatbot
