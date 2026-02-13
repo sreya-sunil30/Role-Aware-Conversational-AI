@@ -160,7 +160,7 @@ def chat(req: ChatRequest):
         "confidence": confidence_score,
         "response_time": response_time
     }
-
+#post
 @app.post("/chat-start")
 def chat_start():
     analytics["total_chats"] += 1
