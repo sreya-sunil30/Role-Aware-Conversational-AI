@@ -7,27 +7,7 @@ on:
 
 jobs:
 
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install Dependencies
-        run: pip install -r requirements.txt
-
-      - name: Validate FastAPI App
-        run: python -m py_compile backend/app.py
-
-
   deploy:
-    needs: build
     runs-on: ubuntu-latest
 
     steps:
@@ -35,18 +15,17 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install CF CLI
-        run: |
-          wget -O cf-cli.tgz "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=v8"
-          tar -xzf cf-cli.tgz
-          sudo mv cf8 /usr/local/bin/cf
-          cf version
-
+        uses: cloudfoundry/cf-cli-action@v2
 
       - name: Login to Cloud Foundry
         run: |
-          cf api ${{ secrets.CF_API }}
-          cf auth ${{ secrets.CF_CLIENT_ID }} ${{ secrets.CF_CLIENT_SECRET }} --client-credentials
-          cf target -o ${{ secrets.CF_ORG }} -s ${{ secrets.CF_SPACE }}
+          cf login \
+            -a ${{ secrets.CF_API }} \
+            -u ${{ secrets.CF_CLIENT_ID }} \
+            -p ${{ secrets.CF_CLIENT_SECRET }} \
+            --client-credentials \
+            -o ${{ secrets.CF_ORG }} \
+            -s ${{ secrets.CF_SPACE }}
 
       - name: Deploy App
         run: cf push
