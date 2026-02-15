@@ -1,0 +1,54 @@
+name: CI/CD - Deploy FastAPI to SAP BTP
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Validate FastAPI App
+        run: |
+          python -m py_compile backend/app.py
+
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install CF CLI
+        run: |
+          wget -q -O - https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key | sudo apt-key add -
+          echo "deb https://packages.cloudfoundry.org/debian stable main" | sudo tee /etc/apt/sources.list.d/cloudfoundry-cli.list
+          sudo apt update
+          sudo apt install cf-cli
+
+      - name: Login to Cloud Foundry
+        run: |
+          cf api ${{ secrets.CF_API }}
+          cf auth ${{ secrets.CF_USERNAME }} ${{ secrets.CF_PASSWORD }}
+          cf target -o ${{ secrets.CF_ORG }} -s ${{ secrets.CF_SPACE }}
+
+      - name: Deploy App
+        run: |
+          cf push
