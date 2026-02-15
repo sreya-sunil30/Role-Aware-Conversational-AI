@@ -20,12 +20,10 @@ jobs:
           python-version: "3.11"
 
       - name: Install Dependencies
-        run: |
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
       - name: Validate FastAPI App
-        run: |
-          python -m py_compile backend/app.py
+        run: python -m py_compile backend/app.py
 
 
   deploy:
@@ -38,17 +36,14 @@ jobs:
 
       - name: Install CF CLI
         run: |
-          wget -q -O - https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key | sudo apt-key add -
-          echo "deb https://packages.cloudfoundry.org/debian stable main" | sudo tee /etc/apt/sources.list.d/cloudfoundry-cli.list
           sudo apt update
-          sudo apt install cf-cli
+          sudo apt install -y cf-cli
 
-            - name: Login to Cloud Foundry
-              run: |
-               cf api ${{ secrets.CF_API }}
-               cf auth ${{ secrets.CF_CLIENT_ID }} ${{ secrets.CF_CLIENT_SECRET }} --client-credentials
-               cf target -o ${{ secrets.CF_ORG }} -s ${{ secrets.CF_SPACE }}
+      - name: Login to Cloud Foundry
+        run: |
+          cf api ${{ secrets.CF_API }}
+          cf auth ${{ secrets.CF_CLIENT_ID }} ${{ secrets.CF_CLIENT_SECRET }} --client-credentials
+          cf target -o ${{ secrets.CF_ORG }} -s ${{ secrets.CF_SPACE }}
 
       - name: Deploy App
-        run: |
-          cf push
+        run: cf push
