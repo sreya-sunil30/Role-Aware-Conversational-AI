@@ -36,8 +36,11 @@ jobs:
 
       - name: Install CF CLI
         run: |
-          sudo apt update
-          sudo apt install -y cf-cli
+          wget -O cf-cli.tgz "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=v8"
+          tar -xzf cf-cli.tgz
+          sudo mv cf8 /usr/local/bin/cf
+          cf version
+
 
       - name: Login to Cloud Foundry
         run: |
