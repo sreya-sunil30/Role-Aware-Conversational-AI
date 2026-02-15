@@ -43,11 +43,11 @@ jobs:
           sudo apt update
           sudo apt install cf-cli
 
-      - name: Login to Cloud Foundry
-        run: |
-          cf api ${{ secrets.CF_API }}
-          cf auth ${{ secrets.CF_USERNAME }} ${{ secrets.CF_PASSWORD }}
-          cf target -o ${{ secrets.CF_ORG }} -s ${{ secrets.CF_SPACE }}
+            - name: Login to Cloud Foundry
+              run: |
+               cf api ${{ secrets.CF_API }}
+               cf auth ${{ secrets.CF_CLIENT_ID }} ${{ secrets.CF_CLIENT_SECRET }} --client-credentials
+               cf target -o ${{ secrets.CF_ORG }} -s ${{ secrets.CF_SPACE }}
 
       - name: Deploy App
         run: |
