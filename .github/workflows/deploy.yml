@@ -6,7 +6,6 @@ on:
       - main
 
 jobs:
-
   deploy:
     runs-on: ubuntu-latest
 
@@ -15,17 +14,17 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install CF CLI
-        uses: cloudfoundry/cf-cli-action@v2
+        run: |
+          curl -L "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=v8" -o cf.tgz
+          tar -xzf cf.tgz
+          sudo mv cf8 /usr/local/bin/cf
+          cf version
 
       - name: Login to Cloud Foundry
         run: |
-          cf login \
-            -a ${{ secrets.CF_API }} \
-            -u ${{ secrets.CF_CLIENT_ID }} \
-            -p ${{ secrets.CF_CLIENT_SECRET }} \
-            --client-credentials \
-            -o ${{ secrets.CF_ORG }} \
-            -s ${{ secrets.CF_SPACE }}
+          cf api ${{ secrets.CF_API }} --skip-ssl-validation
+          cf auth ${{ secrets.CF_CLIENT_ID }} ${{ secrets.CF_CLIENT_SECRET }} --client-credentials
+          cf target -o ${{ secrets.CF_ORG }} -s ${{ secrets.CF_SPACE }}
 
       - name: Deploy App
         run: cf push
