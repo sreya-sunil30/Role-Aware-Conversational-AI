@@ -1,4 +1,4 @@
-name: CI/CD - Deploy FastAPI to SAP BTP
+name: Deploy Role-Aware Conversational AI to SAP BTP
 
 on:
   push:
@@ -10,21 +10,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+    - name: Checkout Code
+      uses: actions/checkout@v3
 
-      - name: Install CF CLI
-        run: |
-          curl -L "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=v8" -o cf.tgz
-          tar -xzf cf.tgz
-          sudo mv cf8 /usr/local/bin/cf
-          cf version
+    - name: Install CF CLI v8
+      run: |
+        wget -q https://packages.cloudfoundry.org/stable?release=linux64-binary -O cf-cli.tgz
+        tar -xzf cf-cli.tgz
+        sudo mv cf8 /usr/local/bin/cf
+        cf --version
 
-      - name: Login to Cloud Foundry
-        run: |
-          cf api ${{ secrets.CF_API }} --skip-ssl-validation
-          cf auth ${{ secrets.CF_CLIENT_ID }} ${{ secrets.CF_CLIENT_SECRET }} --client-credentials
-          cf target -o ${{ secrets.CF_ORG }} -s ${{ secrets.CF_SPACE }}
+    - name: Login to SAP BTP (AP21 Region)
+      run: |
+        cf login \
+          -a https://api.cf.ap21.hana.ondemand.com \
+          -u ${{ secrets.CF_USER }} \
+          -p ${{ secrets.CF_PASSWORD }} \
+          -o f19465b6trial \
+          -s dev
 
-      - name: Deploy App
-        run: cf push
+    - name: Deploy Role-Aware AI Chatbot
+      run: cf push
